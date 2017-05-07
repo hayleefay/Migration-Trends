@@ -1,11 +1,11 @@
 import pandas as pd
 
-bilateral_df = pd.read_csv('bilateral_flow.csv', low_memory=False)
+bilateral_df = pd.read_csv('feature_data/bilateral_flow.csv', low_memory=False)
 
 feature_list = ['fertility','laborparticipation','literacy','primaryenroll','workingagepop','perworkergdp']
 
 for feature in feature_list:
-    file_name = feature + '.csv'
+    file_name = 'feature_data/' + feature + '.csv'
     feature_df = pd.read_csv(file_name, low_memory=False)
 
     df = pd.DataFrame()
@@ -51,4 +51,4 @@ for feature in feature_list:
 
     bilateral_df = double_joined_df
 
-bilateral_df.to_csv("csv_test.csv")
+bilateral_df.to_csv("migration_data.csv")
