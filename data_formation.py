@@ -2,7 +2,7 @@ import pandas as pd
 
 bilateral_df = pd.read_csv('feature_data/bilateral_flow.csv', low_memory=False)
 
-feature_list = ['fertility','laborparticipation','literacy','primaryenroll','workingagepop','perworkergdp']
+feature_list = ['fertility','laborparticipation','literacy','primaryenroll','workingagepop','perworkergdp', 'safety_net']
 
 for feature in feature_list:
     file_name = 'feature_data/' + feature + '.csv'
@@ -50,5 +50,11 @@ for feature in feature_list:
     double_joined_df = pd.merge(joined_df, mean_df, how='inner', left_on='country_dest', right_on='Country')
 
     bilateral_df = double_joined_df
+
+country_orig_list = pd.Series(bilateral_df['country_orig_id'])
+
+dummy_df = pd.get_dummies(country_orig_list, prefix='dummy')
+
+bilateral_df = pd.concat([bilateral_df, dummy_df], axis=1)
 
 bilateral_df.to_csv("migration_data.csv")
