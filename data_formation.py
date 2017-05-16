@@ -2,7 +2,33 @@ import pandas as pd
 
 bilateral_df = pd.read_csv('feature_data/bilateral_flow.csv', low_memory=False)
 
+bilateral_df = pd.melt(bilateral_df, value_vars=['countryflow_1990','countryflow_1995','countryflow_2000','countryflow_2005'], id_vars=['region_orig','region_orig_id','region_dest','region_dest_id','country_orig','country_orig_id','country_dest','country_dest_id'])
+
+bilateral_df['year'] = bilateral_df.variable.str[-4:]
+
 feature_list = ['fertility','laborparticipation','literacy','primaryenroll','workingagepop','perworkergdp', 'safety_net']
+
+def feature_average(x, feature):
+    feature_orig = feature + '_orig'
+    feature_dest = feature + '_dest'
+    if x['year'] == '1990':
+        value_orig = feature + '_1990_x'
+        value_dest = feature + '_1990_y'
+    elif x['year'] == '1995':
+        value_orig = feature + '_1995_x'
+        value_dest = feature + '_1995_y'
+    elif x['year'] == '2000':
+        value_orig = feature + '_2000_x'
+        value_dest = feature + '_2000_y'
+    elif x['year'] == '2005':
+        value_orig = feature + '_2005_x'
+        value_dest = feature + '_2005_y'
+
+    x[feature_orig] = x[value_orig]
+    x[feature_dest] = x[value_dest]
+
+    return x
+
 
 for feature in feature_list:
     file_name = 'feature_data/' + feature + '.csv'
@@ -46,15 +72,20 @@ for feature in feature_list:
     mean_df['Country'] = feature_df['Country Name']
 
     joined_df = pd.merge(bilateral_df, mean_df, how='inner', left_on='country_orig', right_on='Country')
-
     double_joined_df = pd.merge(joined_df, mean_df, how='inner', left_on='country_dest', right_on='Country')
+    bilateral_df = double_joined_df.apply(feature_average, args=(feature,), axis=1)
 
-    bilateral_df = double_joined_df
+complete_df = bilateral_df[['region_orig','region_orig_id','region_dest','region_dest_id',\
+'country_orig','country_orig_id','country_dest','country_dest_id','year','value',\
+'fertility_orig','fertility_dest','laborparticipation_orig','laborparticipation_dest',\
+'literacy_orig','literacy_dest','primaryenroll_orig','primaryenroll_dest','workingagepop_orig',\
+'perworkergdp_orig','perworkergdp_dest','safety_net_orig','safety_net_dest']]
 
-country_orig_list = pd.Series(bilateral_df['country_orig_id'])
+country_orig_list = pd.Series(complete_df['country_orig_id'])
+country_dummy = pd.get_dummies(country_orig_list, prefix='dummy')
 
-dummy_df = pd.get_dummies(country_orig_list, prefix='dummy')
+year_list = pd.Series(complete_df['year'])
+year_df = pd.get_dummies(year_list, prefix='dummy')
 
-bilateral_df = pd.concat([bilateral_df, dummy_df], axis=1)
-
-bilateral_df.to_csv("migration_data.csv")
+complete_df = pd.concat([complete_df, country_dummy, year_df], axis=1)
+complete_df.to_csv("migration_data.csv")
