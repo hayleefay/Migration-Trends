@@ -6,7 +6,7 @@ bilateral_df = pd.melt(bilateral_df, value_vars=['countryflow_1990','countryflow
 
 bilateral_df['year'] = bilateral_df.variable.str[-4:]
 
-feature_list = ['fertility','laborparticipation','literacy','primaryenroll','workingagepop','perworkergdp', 'safety_net']
+feature_list = ['fertility','laborparticipation','literacy','primaryenroll','workingagepop','perworkergdp', 'safety_net', 'employratio','expense']
 
 def feature_average(x, feature):
     feature_orig = feature + '_orig'
@@ -78,8 +78,9 @@ for feature in feature_list:
 complete_df = bilateral_df[['region_orig','region_orig_id','region_dest','region_dest_id',\
 'country_orig','country_orig_id','country_dest','country_dest_id','year','value',\
 'fertility_orig','fertility_dest','laborparticipation_orig','laborparticipation_dest',\
-'literacy_orig','literacy_dest','primaryenroll_orig','primaryenroll_dest','workingagepop_orig',\
-'perworkergdp_orig','perworkergdp_dest','safety_net_orig','safety_net_dest']]
+'literacy_orig','literacy_dest','primaryenroll_orig','primaryenroll_dest','workingagepop_orig','workingagepop_dest',\
+'perworkergdp_orig','perworkergdp_dest','safety_net_orig','safety_net_dest','employratio_orig','employratio_dest',\
+'expense_orig','expense_dest']]
 
 country_orig_list = pd.Series(complete_df['country_orig_id'])
 country_dummy = pd.get_dummies(country_orig_list, prefix='dummy')
