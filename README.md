@@ -12,5 +12,5 @@ A combination of:
   * Primary enrollment rate: Adjusted net enrollment is the number of pupils of the school-age group for primary education, enrolled either in primary or secondary education, expressed as a percentage of the total population in that age group.
   * Working age population: Total population between the ages 15 to 64 as a percentage of the total population. Population is based on the de facto definition of population, which counts all residents regardless of legal status or citizenship.
 * [CEPII](http://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele.asp)
- * Distance: The distance in kilometers between all pairs of countries
- * Common language: A dichotomous variable indicating whether or not two countries share a common language, measured by whether at least 4% of both countries speak the same language.
+  * Distance: The distance in kilometers between all pairs of countries
+  * Common language: A dichotomous variable indicating whether or not two countries share a common language, measured by whether at least 4% of both countries speak the same language.
