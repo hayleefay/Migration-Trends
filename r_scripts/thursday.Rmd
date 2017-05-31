@@ -1,0 +1,122 @@
+---
+title: "Amelia"
+author: "Haylee Ham"
+date: "5/25/2017"
+output: html_document
+---
+
+```{r}
+library(mice)
+library(Zelig)
+library(tidyr)
+library(forcats)
+library(purrr)
+library(broom)
+library(ggplot2)
+library(grid)
+library(dplyr)
+library(modelr)
+library(stringr)
+library(ISLR)
+library(haven)
+library(lmtest)
+library(car)
+library(GGally)
+library(Amelia)
+options(digits = 3)
+set.seed(1234)
+```
+
+```{r}
+df <- read.csv("extra_migration_data.csv")
+```
+
+```{r}
+df['fertility_diff'] <- df['fertility_dest'] - df['fertility_orig']
+df['labor_diff'] <- df['laborparticipation_dest'] - df['laborparticipation_orig']
+df['literacy_diff'] <- df['literacy_dest'] - df['literacy_orig']
+df['enroll_diff'] <- df['primaryenroll_dest'] - df['primaryenroll_orig']
+df['workingage_diff'] <- df['workingagepop_dest'] - df['workingagepop_orig']
+df['perworkergdp_diff'] <- df['perworkergdp_dest'] - df['perworkergdp_orig']
+df['safetynet_diff'] <- df['safety_net_dest'] - df['safety_net_orig']
+df['employratio_diff'] <- df['employratio_dest'] - df['employratio_orig']
+df['cont_diff'] <- df['social_cont_dest'] - df['social_cont_orig']
+df['language'] <- df['col']
+df['distance'] <- df['distwces']
+
+drops <- c("fertility_orig","fertility_dest","laborparticipation_orig","laborparticipation_dest","literacy_orig","literacy_dest","primaryenroll_orig","primaryenroll_dest","workingagepop_orig","workingagepop_dest","perworkergdp_orig","perworkergdp_dest","safety_net_orig","safety_net_dest","employratio_orig","employratio_dest","social_cont_orig","social_cont_dest", "col", "distwces")
+diff_df <- df[ , !(names(df) %in% drops)]
+```
+
+```{r}
+diff_df.out <- amelia(as.data.frame(diff_df), m = 5, 'idvars' = c('region_orig', 'region_dest', 'country_orig', 'country_orig_id', 'country_dest', 'country_dest_id', 'value', 'dummy_CAN', 'dummy_USA', 'dummy_AGO', 'dummy_BDI', 'dummy_BEN', 'dummy_BFA', 'dummy_BWA', 'dummy_CAF', 'dummy_CMR', 'dummy_COM', 'dummy_DJI', 'dummy_DZA', 'dummy_ERI', 'dummy_ETH', 'dummy_GAB', 'dummy_GHA', 'dummy_GIN', 'dummy_GNB', 'dummy_GNQ', 'dummy_KEN', 'dummy_LBR', 'dummy_LBY', 'dummy_LSO', 'dummy_MAR', 'dummy_MDG', 'dummy_MLI', 'dummy_MOZ', 'dummy_MRT', 'dummy_MUS', 'dummy_MWI', 'dummy_NAM', 'dummy_NER', 'dummy_NGA', 'dummy_RWA', 'dummy_SDN', 'dummy_SEN', 'dummy_SLE', 'dummy_SOM', 'dummy_SSD', 'dummy_SWZ', 'dummy_TCD', 'dummy_TGO', 'dummy_TUN', 'dummy_TZA', 'dummy_UGA', 'dummy_ZAF', 'dummy_ZMB', 'dummy_ZWE', 'dummy_ALB', 'dummy_AUT', 'dummy_BEL', 'dummy_BGR', 'dummy_CHE', 'dummy_CHI', 'dummy_CZE', 'dummy_DEU', 'dummy_DNK', 'dummy_ESP', 'dummy_FIN', 'dummy_FRA', 'dummy_GBR', 'dummy_GRC', 'dummy_HRV', 'dummy_HUN', 'dummy_IRL', 'dummy_ISL', 'dummy_ITA', 'dummy_LUX', 'dummy_MLT', 'dummy_MNE', 'dummy_NLD', 'dummy_NOR', 'dummy_POL', 'dummy_PRT', 'dummy_ROU', 'dummy_SRB', 'dummy_SVN', 'dummy_SWE', 'dummy_ARM', 'dummy_AZE', 'dummy_BLR', 'dummy_EST', 'dummy_GEO', 'dummy_KAZ', 'dummy_LTU', 'dummy_LVA', 'dummy_MDA', 'dummy_TJK', 'dummy_TKM', 'dummy_UKR', 'dummy_UZB', 'dummy_ARE', 'dummy_BHR', 'dummy_CYP', 'dummy_IRQ', 'dummy_ISR', 'dummy_JOR', 'dummy_KWT', 'dummy_LBN', 'dummy_OMN', 'dummy_QAT', 'dummy_SAU', 'dummy_TUR', 'dummy_AFG', 'dummy_BGD', 'dummy_BTN', 'dummy_IND', 'dummy_LKA', 'dummy_MDV', 'dummy_NPL', 'dummy_PAK', 'dummy_CHN', 'dummy_JPN', 'dummy_MNG', 'dummy_IDN', 'dummy_KHM', 'dummy_MMR', 'dummy_MYS', 'dummy_PHL', 'dummy_SGP', 'dummy_THA', 'dummy_TLS', 'dummy_VNM', 'dummy_AUS', 'dummy_FJI', 'dummy_GUM', 'dummy_NCL', 'dummy_NZL', 'dummy_PNG', 'dummy_PYF', 'dummy_SLB', 'dummy_TON', 'dummy_VUT', 'dummy_WSM', 'dummy_ABW', 'dummy_ARG', 'dummy_BLZ', 'dummy_BOL', 'dummy_BRA', 'dummy_BRB', 'dummy_CHL', 'dummy_COL', 'dummy_CRI', 'dummy_CUB', 'dummy_DOM', 'dummy_ECU', 'dummy_GRD', 'dummy_GTM', 'dummy_GUY', 'dummy_HND', 'dummy_HTI', 'dummy_JAM', 'dummy_MEX', 'dummy_NIC', 'dummy_PAN', 'dummy_PER', 'dummy_PRI', 'dummy_PRY', 'dummy_SLV', 'dummy_SUR', 'dummy_URY', 'dummy_1990', 'dummy_1995', 'dummy_2000', 'dummy_2005'))
+```
+
+```{r}
+mortal_mod <- lm(value ~ fertility_diff*workingage_diff + perworkergdp_diff*labor_diff + enroll_diff + employratio_diff + distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data=diff_df)
+```
+
+
+```{r}
+models_imp <- data_frame(data = diff_df.out$imputations) %>%
+  mutate(model = map(data, ~ lm(mortal_mod,
+                                data = .x)),
+         coef = map(model, tidy)) %>%
+  unnest(coef, .id = "id")
+models_imp
+```
+
+
+
+```{r}
+mi.meld.plus <- function(df_tidy){
+  # transform data into appropriate matrix shape
+  coef.out <- df_tidy %>%
+    select(id:estimate) %>%
+    spread(term, estimate) %>%
+    select(-id)
+  
+  se.out <- df_tidy %>%
+    select(id, term, std.error) %>%
+    spread(term, std.error) %>%
+    select(-id)
+  
+  combined.results <- mi.meld(q = coef.out, se = se.out)
+  
+  data_frame(term = colnames(combined.results$q.mi),
+             estimate.mi = combined.results$q.mi[1, ],
+             std.error.mi = combined.results$se.mi[1, ])
+}
+
+# compare results
+tidy(mortal_mod) %>%
+  left_join(mi.meld.plus(models_imp)) %>%
+  select(-statistic, -p.value)
+```
+
+
+
+```{r}
+zelig.fit <- zelig(mortal_mod, data = diff_df.out, model = "ls", cite = FALSE)
+summary(zelig.fit)
+```
+
+```{r}
+mi.out <- to_zelig_mi(as.data.frame(diff_df.out$imputations$imp1), as.data.frame(diff_df.out$imputations$imp2), as.data.frame(diff_df.out$imputations$imp3), as.data.frame(diff_df.out$imputations$imp4), as.data.frame(diff_df.out$imputations$imp5))
+
+z.out.mi <- zelig(value ~ fertility_diff + workingage_diff + perworkergdp_diff + labor_diff + enroll_diff + employratio_diff+ distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, model = "ls", data = mi.out)
+```
+
+```{r}
+combine_coef_se(z.out.mi)
+```
+
+```{r}
+library(mitools)
+imp.data <- imputationList(diff_df.out$imputations)
+mitools.fit <- MIcombine(with(imp.data, lm(mortal_mod)))
+mitools.res <- summary(mitools.fit)
+mitools.res <- cbind(mitools.res, df = mitools.fit$df)
+mitools.res
+```
+

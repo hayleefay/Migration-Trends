@@ -1,0 +1,466 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+#library(broom)
+#library(grid)
+#library(modelr)
+#library(stringr)
+#library(ISLR)
+#library(haven)
+#library(lmtest)
+# library(car)
+#library(purrr)
+library(gam)
+options(digits = 3)
+set.seed(1234)
+```
+
+```{r}
+df <- read.csv("extra_migration_data.csv")
+```
+
+Creating differences in variables
+```{r}
+df['fertility_diff'] <- df['fertility_dest'] - df['fertility_orig']
+df['labor_diff'] <- df['laborparticipation_dest'] - df['laborparticipation_orig']
+df['literacy_diff'] <- df['literacy_dest'] - df['literacy_orig']
+df['enroll_diff'] <- df['primaryenroll_dest'] - df['primaryenroll_orig']
+df['workingage_diff'] <- df['workingagepop_dest'] - df['workingagepop_orig']
+df['perworkergdp_diff'] <- df['perworkergdp_dest'] - df['perworkergdp_orig']
+df['safetynet_diff'] <- df['safety_net_dest'] - df['safety_net_orig']
+df['employratio_diff'] <- df['employratio_dest'] - df['employratio_orig']
+# df['expense_diff'] <- df['expense_dest'] - df['expense_orig']
+df['distance'] <- df['distwces']
+df['language'] = df['col']
+``` 
+
+List-wise deletion
+```{r}
+drops <- c("fertility_orig","fertility_dest","literacy_diff","laborparticipation_orig","laborparticipation_dest","literacy_orig","literacy_dest","primaryenroll_orig","primaryenroll_dest","workingagepop_orig","workingagepop_dest","perworkergdp_orig","perworkergdp_dest","safety_net_orig","safety_net_dest","employratio_orig","employratio_dest","social_cont_orig","social_cont_dest", "distwces", "col", "safetynet_diff", "labor_diff")
+important_df <- df[ , !(names(df) %in% drops)]
+  
+
+omit_df <- na.omit(important_df)
+omit_mod <- lm(value ~ fertility_diff*workingage_diff + perworkergdp_diff*employratio_diff + enroll_diff + sqrt(distance) + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df)
+
+tidy(omit_mod)
+summary(omit_mod)
+```
+
+Display a plot of the interaction effect between perworkergdp and employ ratio
+```{r}
+inter_mod <- lm(value~perworkergdp_diff*employratio_diff, data=omit_df)
+inter_mod2 <- lm(value~fertility_diff*workingage_diff, data=omit_df)
+
+# model - lm object
+# mod_var - name of moderating variable in the interaction
+instant_effect <- function(model, mod_var){
+  # get interaction term name
+  int.name <- names(model$coefficients)[[which(str_detect(names(model$coefficients), ":"))]]
+  
+  marg_var <- str_split(int.name, ":")[[1]][[which(str_split(int.name, ":")[[1]] != mod_var)]]
+  
+  # store coefficients and covariance matrix
+  beta.hat <- coef(model)
+  cov <- vcov(model)
+  
+  # possible set of values for mod_var
+  if(class(model)[[1]] == "lm"){
+    z <- seq(min(model$model[[mod_var]]), max(model$model[[mod_var]]))
+  } else {
+    z <- seq(min(model$data[[mod_var]]), max(model$data[[mod_var]]))
+  }
+  
+  # calculate instantaneous effect
+  dy.dx <- beta.hat[[marg_var]] + beta.hat[[int.name]] * z
+  
+  # calculate standard errors for instantaeous effect
+  se.dy.dx <- sqrt(cov[marg_var, marg_var] +
+                     z^2 * cov[int.name, int.name] +
+                     2 * z * cov[marg_var, int.name])
+  
+  # combine into data frame
+  data_frame(z = z,
+             dy.dx = dy.dx,
+             se = se.dy.dx)
+}
+# line plot
+instant_effect(inter_mod, "employratio_diff") %>%
+  ggplot(aes(z, dy.dx)) +
+  geom_line() +
+  geom_line(aes(y = dy.dx - 1.96 * se), linetype = 2) +
+  geom_line(aes(y = dy.dx + 1.96 * se), linetype = 2) +
+  geom_hline(yintercept = 0) +
+  labs(title = "Marginal effect of employment ratio",
+       subtitle = "By per worker gdp",
+       x = "per worker gdp",
+       y = "Estimated marginal effect")
+
+instant_effect(inter_mod2, "fertility_diff") %>%
+  ggplot(aes(z, dy.dx)) +
+  geom_line() +
+  geom_line(aes(y = dy.dx - 1.96 * se), linetype = 2) +
+  geom_line(aes(y = dy.dx + 1.96 * se), linetype = 2) +
+  geom_hline(yintercept = 0) +
+  labs(title = "Marginal effect of employment ratio",
+       subtitle = "By per worker gdp",
+       x = "per worker gdp",
+       y = "Estimated marginal effect")
+```
+
+Basic bivariate plot
+```{r}
+ggplot(omit_mod, aes(perworkergdp_diff, value)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "Per worker GDP",
+       y = "Value")
+```
+
+GAM with a spline for perworker gdp
+```{r}
+omit_gam <- gam(value ~ bs(perworkergdp_diff, df = 5) + fertility_diff + workingage_diff + employratio_diff + enroll_diff + sqrt(distance) + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df, family = gaussian)
+summary(omit_gam)
+```
+
+```{r}
+omit_gam$coefficients
+```
+
+
+```{r}
+mgam_terms <- preplot(mgam, se = TRUE, rug = FALSE)
+```
+```{r}
+library(dplyr)
+library(ggplot2)
+## age
+data_frame(x = omit_gam_terms$`bs(perworkergdp_diff, df = 5)`$x,
+           y = omit_gam_terms$`bs(perworkergdp_diff, df = 5)`$y,
+           se.fit = omit_gam_terms$`bs(perworkergdp_diff, df = 5)`$se.y) %>%
+  mutate(y_low = y - 1.96 * se.fit,
+         y_high = y + 1.96 * se.fit) %>%
+  ggplot(aes(x, y)) +
+  geom_line() +
+  geom_line(aes(y = y_low), linetype = 2, colour="#ED6347") +
+  geom_line(aes(y = y_high), linetype = 2, colour="#ED6347") +
+  labs(x = "Difference in per worker GDP",
+       y = expression(f[1]("Difference in per worker GDP")))
+```
+
+```{r}
+library(mgcv)
+mgam <- gam(value ~ bs(perworkergdp_diff, df = 5) + fertility_diff + workingage_diff + employratio_diff + enroll_diff + sqrt(distance) + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df, family = gaussian())
+```
+
+```{r}
+summary(mgam, p.type=0)
+```
+
+
+
+```{r}
+omit_mod1 <- lm(value ~ fertility_diff*workingage_diff + distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df)
+
+tidy(omit_mod1)
+```
+
+```{r}
+omit_mod2 <- lm(value ~ perworkergdp_diff*employratio_diff + distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df)
+
+tidy(omit_mod2)
+```
+
+```{r}
+omit_mod3 <- lm(value ~ enroll_diff + distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df)
+
+tidy(omit_mod3)
+```
+
+```{r}
+hist_fertility <- hist(df$fertility_diff, col="lightblue", xlab='Fertility rate difference', main='Histogram of fertility rate difference')
+hist_labor <- hist(df$labor_diff, col="lavender", xlab='Labor participation rate difference', main='Histogram of labor participation rate difference')
+hist_enroll <- hist(df$enroll_diff, col="lightsalmon2", xlab='Primary enrollment rate difference', main='Histogram of primary enrollment rate difference')
+hist_literacy <- hist(df$literacy_diff, col="slategray", xlab='Literacy rate difference', main='Histogram of literacy rate difference')
+hist_perworkergdp <- hist(df$perworkergdp_diff, col="lightpink2", xlab='Per worker GDP difference', main='Histogram of per worker GDP difference')
+hist_safetynet <- hist(df$safetynet_diff, col="lemonchiffon2", xlab='Safety net coverage difference', main='Histogram of safety net coverage difference')
+hist_perworkergdp <- hist(df$workingage_diff, col="thistle2", xlab='Working age rate difference', main='Histogram of working age rate difference')
+```
+
+
+```{r}
+library(plotly)
+p <- plot_ly(x = sqrt(df$distance), type = "histogram", nbinsx = 20, opacity = 1, marker = list(color='#5C6AC4')) %>%
+  layout(
+    title = 'Histogram of fertility rate difference',
+    xaxis = list(
+      title = 'Fertility rate difference'
+    ),
+    yaxis = list(
+      title = 'Frequency'
+    )
+  )
+p
+```
+
+
+```{r}
+model_df <- 
+# add key statistics
+dahl_augment <- df_copy %>%
+  mutate(hat = hatvalues(migration_model),
+         student = rstudent(migration_model),
+         cooksd = cooks.distance(migration_model))
+
+# draw bubble plot
+ggplot(dahl_augment, aes(hat, student)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_point(aes(size = cooksd), shape = 1) +
+  geom_text(data = dahl_augment %>%
+              arrange(-cooksd) %>%
+              slice(1:10),
+            aes(label = Congress)) +
+  scale_size_continuous(range = c(1, 20)) +
+  labs(x = "Leverage",
+       y = "Studentized residual") +
+  theme(legend.position = "none")
+```
+
+```{r}
+car::qqPlot(omit_mod)
+```
+
+```{r}
+augment(omit_mod, omit_df) %>%
+  mutate(.student = rstudent(omit_mod)) %>%
+  ggplot(aes(.student)) +
+  geom_density(adjust = .5) +
+  labs(x = "Studentized residuals",
+       y = "Estimated density")
+```
+
+```{r}
+test_df <- omit_df
+test_df %>%
+  add_predictions(omit_mod) %>%
+  add_residuals(omit_mod) %>%
+  ggplot(aes(pred, resid)) +
+  geom_point(alpha = .2) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_quantile(method = "rqss", lambda = 5, quantiles = c(.05, .95)) +
+  labs(title = "Homoscedastic variance of error terms",
+       x = "Predicted values",
+       y = "Residuals")
+```
+
+```{r}
+bptest(omit_mod)
+```
+
+Need to impute values or figure out what to do with missing ones.
+```{r}
+cormat_heatmap <- function(data){
+  # generate correlation matrix
+  cormat <- round(cor(data), 2)
+  
+  # melt into a tidy table
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+  
+  upper_tri <- get_upper_tri(cormat)
+  
+  # reorder matrix based on coefficient value
+  reorder_cormat <- function(cormat){
+    # Use correlation between variables as distance
+    dd <- as.dist((1-cormat)/2)
+    hc <- hclust(dd)
+    cormat <-cormat[hc$order, hc$order]
+  }
+  
+  cormat <- reorder_cormat(cormat)
+  upper_tri <- get_upper_tri(cormat)
+  
+  # Melt the correlation matrix
+  melted_cormat <- reshape2::melt(upper_tri, na.rm = TRUE)
+  
+  # Create a ggheatmap
+  ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+    geom_tile(color = "white")+
+    scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                         midpoint = 0, limit = c(-1,1), space = "Lab", 
+                         name="Pearson\nCorrelation") +
+    theme_minimal()+ # minimal theme
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                     size = 12, hjust = 1))+
+    coord_fixed()
+  
+  # add correlation values to graph
+  ggheatmap + 
+    geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.position = "bottom")
+}
+cormat_heatmap(select_if(omit_df, is.numeric))
+```
+
+```{r}
+library(GGally)
+ggpairs(select_if(omit_df, is.numeric))
+```
+
+```{r}
+df %>%
+  select(value, fertility_diff, labor_diff, literacy_diff, enroll_diff, workingage_diff, perworkergdp_diff, safetynet_diff, employratio_diff, expense_diff) %>%
+  summarize_all(funs(sum(is.na(.)))) %>%
+  knitr::kable()
+```
+
+```{r}
+omit_df <- na.omit(df)
+omit_df %>%
+  select(value, fertility_diff, labor_diff, literacy_diff, enroll_diff, workingage_diff, perworkergdp_diff, safetynet_diff, employratio_diff, expense_diff) %>%
+  summarize_all(funs(sum(is.na(.)))) %>%
+  knitr::kable()
+```
+
+```{r}
+test <- read.csv('welfare_test.csv')
+test %>%
+  summarize_all(funs(sum(is.na(.)))) %>%
+  knitr::kable()
+```
+
+```{r}
+# df <- read.csv("migration_data.csv")
+
+df['fertility_diff'] <- df['fertility_dest'] - df['fertility_orig']
+df['labor_diff'] <- df['laborparticipation_dest'] - df['laborparticipation_orig']
+df['literacy_diff'] <- df['literacy_dest'] - df['literacy_orig']
+df['enroll_diff'] <- df['primaryenroll_dest'] - df['primaryenroll_orig']
+df['workingage_diff'] <- df['workingagepop_dest'] - df['workingagepop_orig']
+df['perworkergdp_diff'] <- df['perworkergdp_dest'] - df['perworkergdp_orig']
+# df['safetynet_diff'] <- df['safety_net_dest'] - df['safety_net_orig']
+df['employratio_diff'] <- df['employratio_dest'] - df['employratio_orig']
+df['socialcont_diff'] <- df['social_cont_dest'] - df['social_cont_orig']
+
+df %>%
+  select(value, fertility_diff, labor_diff, literacy_diff, enroll_diff, workingage_diff, perworkergdp_diff, employratio_diff, socialcont_diff) %>%
+  summarize_all(funs(sum(is.na(.)))) %>%
+  knitr::kable()
+```
+
+```{r}
+drops <- c("safety_net_orig","safety_net_dest", "safetynet_diff")
+df <- df[ , !(names(df) %in% drops)]
+```
+
+```{r}
+df <- na.omit(df)
+```
+
+```{r}
+cormat_heatmap <- function(data){
+  # generate correlation matrix
+  cormat <- round(cor(data), 2)
+  
+  # melt into a tidy table
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+  
+  upper_tri <- get_upper_tri(cormat)
+  
+  # reorder matrix based on coefficient value
+  reorder_cormat <- function(cormat){
+    # Use correlation between variables as distance
+    dd <- as.dist((1-cormat)/2)
+    hc <- hclust(dd)
+    cormat <-cormat[hc$order, hc$order]
+  }
+  
+  cormat <- reorder_cormat(cormat)
+  upper_tri <- get_upper_tri(cormat)
+  
+  # Melt the correlation matrix
+  melted_cormat <- reshape2::melt(upper_tri, na.rm = TRUE)
+  
+  # Create a ggheatmap
+  ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+    geom_tile(color = "white")+
+    scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                         midpoint = 0, limit = c(-1,1), space = "Lab", 
+                         name="Pearson\nCorrelation") +
+    theme_minimal()+ # minimal theme
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                     size = 12, hjust = 1))+
+    coord_fixed()
+  
+  # add correlation values to graph
+  ggheatmap + 
+    geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.position = "bottom")
+}
+
+cormat_heatmap(select_if(df, is.numeric))
+```
+
+```{r}
+factors <- c('fertility_diff','language','employratio_diff','perworkergdp_diff','distance','enroll_diff','workingage_diff')
+factors_df <- omit_df[factors]
+factors_df['distance'] = log(factors_df['distance'])
+library(GGally)
+ggpairs(select_if(factors_df, is.numeric))
+```
+
+```{r}
+factor_mod <- lm(value ~ fertility_diff*workingage_diff + perworkergdp_diff*employratio_diff + enroll_diff + distance + language, data=omit_df)
+vif(factor_mod)
+#colnames(omit_df)
+```
+
+```{r}
+library(broom)
+names <- c("Difference in fertility", "Difference in working \nage proportion", "Difference in \nproportion employed", "Difference in primary \nschool enrollment")
+p_est <- c(5.53, 29.22, 58.83, 12.23)
+error <- c(219.81, 51.82, 11.45, 10.08)
+coord_df <- data.frame(names, p_est, error)
+ggplot(coord_df, aes(y=names,x=p_est, xmin=-10)) %>%
+  + geom_point(color = c("#00848E"), size=4) %>%
+  + geom_errorbarh(aes(xmin=p_est-error, xmax=p_est+error), height = .1) %>%
+  + labs(x = "Parameter Estimate",
+         y = NULL)
+```
+
+```{r}
+quantile(df$perworkergdp_orig, probs = seq(0, 1, 0.2), na.rm = TRUE)
+```
+
+
+```{r}
+fig1 <- df[(df$perworkergdp_orig >= 62353 & df$perworkergdp_orig < 205327)  & (df$perworkergdp_dest >= 62353 & df$perworkergdp_dest < 205328), ]
+
+sum(fig1$value,na.rm=TRUE)
+```
+
+
+
+
+

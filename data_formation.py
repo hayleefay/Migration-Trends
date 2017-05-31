@@ -6,7 +6,7 @@ bilateral_df = pd.melt(bilateral_df, value_vars=['countryflow_1990','countryflow
 
 bilateral_df['year'] = bilateral_df.variable.str[-4:]
 
-feature_list = ['fertility','laborparticipation','literacy','primaryenroll','workingagepop','perworkergdp', 'safety_net', 'employratio','expense']
+feature_list = ['fertility','laborparticipation','literacy','primaryenroll','workingagepop','perworkergdp', 'safety_net', 'employratio','social_cont']
 
 def feature_average(x, feature):
     feature_orig = feature + '_orig'
@@ -80,7 +80,7 @@ complete_df = bilateral_df[['region_orig','region_orig_id','region_dest','region
 'fertility_orig','fertility_dest','laborparticipation_orig','laborparticipation_dest',\
 'literacy_orig','literacy_dest','primaryenroll_orig','primaryenroll_dest','workingagepop_orig','workingagepop_dest',\
 'perworkergdp_orig','perworkergdp_dest','safety_net_orig','safety_net_dest','employratio_orig','employratio_dest',\
-'expense_orig','expense_dest']]
+'social_cont_orig', 'social_cont_dest']]
 
 country_orig_list = pd.Series(complete_df['country_orig_id'])
 country_dummy = pd.get_dummies(country_orig_list, prefix='dummy')
@@ -89,4 +89,17 @@ year_list = pd.Series(complete_df['year'])
 year_df = pd.get_dummies(year_list, prefix='dummy')
 
 complete_df = pd.concat([complete_df, country_dummy, year_df], axis=1)
+
+language_df = pd.read_csv('feature_data/common_language.csv', low_memory=False)
+language_df = language_df[['iso_o', 'iso_d', 'col']]
+language_df.rename(index=str, columns={"iso_o": "country_orig_id", "iso_d": "country_dest_id"})
+
+distance_df = pd.read_csv('feature_data/distances.csv', low_memory=False)
+distance_df = distance_df[['iso_o', 'iso_d', 'distwces']]
+distance_df.rename(index=str, columns={"iso_o": "country_orig_id", "iso_d": "country_dest_id"})
+
+
+complete_df = pd.merge(complete_df, language_df, how='inner', on=['country_orig','country_dest'])
+complete_df = pd.merge(complete_df, distance_df, how='inner', on=['country_orig','country_dest'])
+
 complete_df.to_csv("migration_data.csv")

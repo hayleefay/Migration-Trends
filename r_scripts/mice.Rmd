@@ -1,0 +1,58 @@
+---
+title: "Mice"
+author: "Haylee Ham"
+date: "5/26/2017"
+output: html_document
+---
+
+```{r}
+mdf <- read.csv("extra_migration_data.csv")
+```
+
+```{r}
+mdf['fertility_diff'] <- mdf['fertility_dest'] - mdf['fertility_orig']
+mdf['labor_diff'] <- mdf['laborparticipation_dest'] - mdf['laborparticipation_orig']
+mdf['literacy_diff'] <- mdf['literacy_dest'] - mdf['literacy_orig']
+mdf['enroll_diff'] <- df['primaryenroll_dest'] - df['primaryenroll_orig']
+mdf['workingage_diff'] <- mdf['workingagepop_dest'] - mdf['workingagepop_orig']
+mdf['perworkergdp_diff'] <- df['perworkergdp_dest'] - df['perworkergdp_orig']
+mdf['safetynet_diff'] <- mdf['safety_net_dest'] - mdf['safety_net_orig']
+mdf['employratio_diff'] <- mdf['employratio_dest'] - mdf['employratio_orig']
+mdf['cont_diff'] <- mdf['social_cont_dest'] - mdf['social_cont_orig']
+mdf['language'] <- mdf['col']
+mdf['distance'] <- mdf['distwces']
+
+drops <- c("fertility_orig","fertility_dest","laborparticipation_orig","laborparticipation_dest","literacy_orig","literacy_dest","primaryenroll_orig","primaryenroll_dest","workingagepop_orig","workingagepop_dest","perworkergdp_orig","perworkergdp_dest","safety_net_orig","safety_net_dest","employratio_orig","employratio_dest","social_cont_orig","social_cont_dest", "col", "distwces", "cont_diff", "safetynet_diff")
+mmdf <- mdf[ , !(names(mdf) %in% drops)]
+```
+
+```{r}
+colnames(mmdf)
+```
+
+```{r}
+meth
+```
+
+
+
+```{r}
+library(mice)
+init = mice(mmdf, maxit=0) 
+meth = init$method
+predM = init$predictorMatrix
+
+# skipped for imputation but used for prediction
+meth[c('region_orig', 'region_dest', 'country_orig', 'country_orig_id', 'country_dest', 'country_dest_id', 'value', 'dummy_CAN', 'dummy_USA', 'dummy_AGO', 'dummy_BDI', 'dummy_BEN', 'dummy_BFA', 'dummy_BWA', 'dummy_CAF', 'dummy_CMR', 'dummy_COM', 'dummy_DJI', 'dummy_DZA', 'dummy_ERI', 'dummy_ETH', 'dummy_GAB', 'dummy_GHA', 'dummy_GIN', 'dummy_GNB', 'dummy_GNQ', 'dummy_KEN', 'dummy_LBR', 'dummy_LBY', 'dummy_LSO', 'dummy_MAR', 'dummy_MDG', 'dummy_MLI', 'dummy_MOZ', 'dummy_MRT', 'dummy_MUS', 'dummy_MWI', 'dummy_NAM', 'dummy_NER', 'dummy_NGA', 'dummy_RWA', 'dummy_SDN', 'dummy_SEN', 'dummy_SLE', 'dummy_SOM', 'dummy_SSD', 'dummy_SWZ', 'dummy_TCD', 'dummy_TGO', 'dummy_TUN', 'dummy_TZA', 'dummy_UGA', 'dummy_ZAF', 'dummy_ZMB', 'dummy_ZWE', 'dummy_ALB', 'dummy_AUT', 'dummy_BEL', 'dummy_BGR', 'dummy_CHE', 'dummy_CHI', 'dummy_CZE', 'dummy_DEU', 'dummy_DNK', 'dummy_ESP', 'dummy_FIN', 'dummy_FRA', 'dummy_GBR', 'dummy_GRC', 'dummy_HRV', 'dummy_HUN', 'dummy_IRL', 'dummy_ISL', 'dummy_ITA', 'dummy_LUX', 'dummy_MLT', 'dummy_MNE', 'dummy_NLD', 'dummy_NOR', 'dummy_POL', 'dummy_PRT', 'dummy_ROU', 'dummy_SRB', 'dummy_SVN', 'dummy_SWE', 'dummy_ARM', 'dummy_AZE', 'dummy_BLR', 'dummy_EST', 'dummy_GEO', 'dummy_KAZ', 'dummy_LTU', 'dummy_LVA', 'dummy_MDA', 'dummy_TJK', 'dummy_TKM', 'dummy_UKR', 'dummy_UZB', 'dummy_ARE', 'dummy_BHR', 'dummy_CYP', 'dummy_IRQ', 'dummy_ISR', 'dummy_JOR', 'dummy_KWT', 'dummy_LBN', 'dummy_OMN', 'dummy_QAT', 'dummy_SAU', 'dummy_TUR', 'dummy_AFG', 'dummy_BGD', 'dummy_BTN', 'dummy_IND', 'dummy_LKA', 'dummy_MDV', 'dummy_NPL', 'dummy_PAK', 'dummy_CHN', 'dummy_JPN', 'dummy_MNG', 'dummy_IDN', 'dummy_KHM', 'dummy_MMR', 'dummy_MYS', 'dummy_PHL', 'dummy_SGP', 'dummy_THA', 'dummy_TLS', 'dummy_VNM', 'dummy_AUS', 'dummy_FJI', 'dummy_GUM', 'dummy_NCL', 'dummy_NZL', 'dummy_PNG', 'dummy_PYF', 'dummy_SLB', 'dummy_TON', 'dummy_VUT', 'dummy_WSM', 'dummy_ABW', 'dummy_ARG', 'dummy_BLZ', 'dummy_BOL', 'dummy_BRA', 'dummy_BRB', 'dummy_CHL', 'dummy_COL', 'dummy_CRI', 'dummy_CUB', 'dummy_DOM', 'dummy_ECU', 'dummy_GRD', 'dummy_GTM', 'dummy_GUY', 'dummy_HND', 'dummy_HTI', 'dummy_JAM', 'dummy_MEX', 'dummy_NIC', 'dummy_PAN', 'dummy_PER', 'dummy_PRI', 'dummy_PRY', 'dummy_SLV', 'dummy_SUR', 'dummy_URY', 'dummy_1990', 'dummy_1995', 'dummy_2000', 'dummy_2005', 'literacy_diff', 'labor_diff', 'distance', 'language', 'fertility_diff', 'workingage_diff')]=""
+
+meth[c("enroll_diff", "perworkergdp_diff", "employratio_diff")]="norm" 
+
+set.seed(103)
+imputed = mice(mmdf, method=meth, predictorMatrix=predM, m=5)
+
+imputed <- complete(imputed)
+```
+
+
+
+
