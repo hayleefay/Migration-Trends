@@ -3,22 +3,23 @@ title: "R Notebook"
 output: html_notebook
 ---
 ```{r}
-#library(broom)
-#library(grid)
-#library(modelr)
-#library(stringr)
-#library(ISLR)
-#library(haven)
-#library(lmtest)
-# library(car)
-#library(purrr)
+library(broom)
+library(grid)
+library(modelr)
+library(stringr)
+library(ISLR)
+library(haven)
+library(lmtest)
+library(car)
+library(purrr)
 library(gam)
+library(dplyr)
 options(digits = 3)
 set.seed(1234)
 ```
 
 ```{r}
-df <- read.csv("extra_migration_data.csv")
+df <- read.csv("migration_data.csv")
 ```
 
 Creating differences in variables
@@ -125,14 +126,7 @@ omit_gam <- gam(value ~ bs(perworkergdp_diff, df = 5) + fertility_diff + working
 summary(omit_gam)
 ```
 
-```{r}
-omit_gam$coefficients
-```
 
-
-```{r}
-mgam_terms <- preplot(mgam, se = TRUE, rug = FALSE)
-```
 ```{r}
 library(dplyr)
 library(ggplot2)
@@ -144,8 +138,8 @@ data_frame(x = omit_gam_terms$`bs(perworkergdp_diff, df = 5)`$x,
          y_high = y + 1.96 * se.fit) %>%
   ggplot(aes(x, y)) +
   geom_line() +
-  geom_line(aes(y = y_low), linetype = 2, colour="#ED6347") +
-  geom_line(aes(y = y_high), linetype = 2, colour="#ED6347") +
+  geom_line(aes(y = y_low), linetype = 2, colour="#00848E") +
+  geom_line(aes(y = y_high), linetype = 2, colour="#00848E") +
   labs(x = "Difference in per worker GDP",
        y = expression(f[1]("Difference in per worker GDP")))
 ```
@@ -162,21 +156,9 @@ summary(mgam, p.type=0)
 
 
 ```{r}
-omit_mod1 <- lm(value ~ fertility_diff*workingage_diff + distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df)
+omit_mod1 <- lm(value ~ fertility_diff + workingage_diff + distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df)
 
 tidy(omit_mod1)
-```
-
-```{r}
-omit_mod2 <- lm(value ~ perworkergdp_diff*employratio_diff + distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df)
-
-tidy(omit_mod2)
-```
-
-```{r}
-omit_mod3 <- lm(value ~ enroll_diff + distance + language + dummy_CAN + dummy_USA + dummy_AGO + dummy_BDI + dummy_BEN + dummy_BFA + dummy_BWA + dummy_CAF + dummy_CMR + dummy_COM + dummy_DJI + dummy_DZA + dummy_ERI + dummy_ETH + dummy_GAB + dummy_GHA + dummy_GIN + dummy_GNB + dummy_GNQ + dummy_KEN + dummy_LBR + dummy_LBY + dummy_LSO + dummy_MAR + dummy_MDG + dummy_MLI + dummy_MOZ + dummy_MRT + dummy_MUS + dummy_MWI + dummy_NAM + dummy_NER + dummy_NGA + dummy_RWA + dummy_SDN + dummy_SEN + dummy_SLE + dummy_SOM + dummy_SSD + dummy_SWZ + dummy_TCD + dummy_TGO + dummy_TUN + dummy_TZA + dummy_UGA + dummy_ZAF + dummy_ZMB + dummy_ZWE + dummy_ALB + dummy_AUT + dummy_BEL + dummy_BGR + dummy_CHE + dummy_CHI + dummy_CZE + dummy_DEU + dummy_DNK + dummy_ESP + dummy_FIN + dummy_FRA + dummy_GBR + dummy_GRC + dummy_HRV + dummy_HUN + dummy_IRL + dummy_ISL + dummy_ITA + dummy_LUX + dummy_MLT + dummy_MNE + dummy_NLD + dummy_NOR + dummy_POL + dummy_PRT + dummy_ROU + dummy_SRB + dummy_SVN + dummy_SWE + dummy_ARM + dummy_AZE + dummy_BLR + dummy_EST + dummy_GEO + dummy_KAZ + dummy_LTU + dummy_LVA + dummy_MDA + dummy_TJK + dummy_TKM + dummy_UKR + dummy_UZB + dummy_ARE + dummy_BHR + dummy_CYP + dummy_IRQ + dummy_ISR + dummy_JOR + dummy_KWT + dummy_LBN + dummy_OMN + dummy_QAT + dummy_SAU + dummy_TUR + dummy_AFG + dummy_BGD + dummy_BTN + dummy_IND + dummy_LKA + dummy_MDV + dummy_NPL + dummy_PAK + dummy_CHN + dummy_JPN + dummy_MNG + dummy_IDN + dummy_KHM + dummy_MMR + dummy_MYS + dummy_PHL + dummy_SGP + dummy_THA + dummy_TLS + dummy_VNM + dummy_AUS + dummy_FJI + dummy_GUM + dummy_NCL + dummy_NZL + dummy_PNG + dummy_PYF + dummy_SLB + dummy_TON + dummy_VUT + dummy_WSM + dummy_ABW + dummy_ARG + dummy_BLZ + dummy_BOL + dummy_BRA + dummy_BRB + dummy_CHL + dummy_COL + dummy_CRI + dummy_CUB + dummy_DOM + dummy_ECU + dummy_GRD + dummy_GTM + dummy_GUY + dummy_HND + dummy_HTI + dummy_JAM + dummy_MEX + dummy_NIC + dummy_PAN + dummy_PER + dummy_PRI + dummy_PRY + dummy_SLV + dummy_SUR + dummy_URY + dummy_1990 + dummy_1995 + dummy_2000 + dummy_2005, data = omit_df)
-
-tidy(omit_mod3)
 ```
 
 ```{r}
@@ -189,44 +171,100 @@ hist_safetynet <- hist(df$safetynet_diff, col="lemonchiffon2", xlab='Safety net 
 hist_perworkergdp <- hist(df$workingage_diff, col="thistle2", xlab='Working age rate difference', main='Histogram of working age rate difference')
 ```
 
-
 ```{r}
 library(plotly)
-p <- plot_ly(x = sqrt(df$distance), type = "histogram", nbinsx = 20, opacity = 1, marker = list(color='#5C6AC4')) %>%
+
+default_font <- list(size = 14)
+
+p <- plot_ly(x = omit_df$distance^(1/2), type = "histogram", nbinsx = 25, opacity = 1, marker = list(color='#1C2260')) %>%
   layout(
-    title = 'Histogram of fertility rate difference',
     xaxis = list(
-      title = 'Fertility rate difference'
+      title = 'Difference in per worker GDP'
     ),
     yaxis = list(
       title = 'Frequency'
-    )
+    ),
+    font = default_font
   )
 p
 ```
 
+```{r}
+library(plotly)
+
+p <- plot_ly(x = df$perworkergdp_diff, type = "histogram",nbinsx = 22, opacity = 1, marker = list(color='#108043')) %>%
+  layout(
+    xaxis = list(
+      title = 'Difference in per worker GDP'
+    ),
+    yaxis = list(
+      title = 'Frequency'
+    ),
+    font = default_font
+  )
+p
+```
 
 ```{r}
-model_df <- 
-# add key statistics
-dahl_augment <- df_copy %>%
-  mutate(hat = hatvalues(migration_model),
-         student = rstudent(migration_model),
-         cooksd = cooks.distance(migration_model))
+library(plotly)
 
-# draw bubble plot
-ggplot(dahl_augment, aes(hat, student)) +
-  geom_hline(yintercept = 0, linetype = 2) +
-  geom_point(aes(size = cooksd), shape = 1) +
-  geom_text(data = dahl_augment %>%
-              arrange(-cooksd) %>%
-              slice(1:10),
-            aes(label = Congress)) +
-  scale_size_continuous(range = c(1, 20)) +
-  labs(x = "Leverage",
-       y = "Studentized residual") +
-  theme(legend.position = "none")
+p <- plot_ly(x = df$fertility_diff, type = "histogram", nbinsx = 25, opacity = 1, marker = list(color='#F49342')) %>%
+  layout(
+    xaxis = list(
+      title = 'Difference in fertility rate'
+    ),
+    yaxis = list(
+      title = 'Frequency'
+    ),
+    font = default_font
+  )
+
+p
 ```
+
+```{r}
+p <- plot_ly(x = df$workingage_diff, type = "histogram", nbinsx = 25, opacity = 1, marker = list(color='#00848E')) %>%
+  layout(
+    xaxis = list(
+      title = 'Difference in working age rate'
+    ),
+    yaxis = list(
+      title = 'Frequency',
+      face='bold'
+    ),
+    font = default_font
+  )
+p
+```
+
+```{r}
+p <- plot_ly(x = df$employratio_diff, type = "histogram", nbinsx = 20, opacity = 1, marker = list(color='#5C6AC4')) %>%
+  layout(
+    xaxis = list(
+      title = 'Difference in labor participation rate'
+    ),
+    yaxis = list(
+      title = 'Frequency'
+    ),
+    font = default_font
+  )
+p
+```
+
+```{r}
+p <- plot_ly(x = df$enroll_diff, type = "histogram", nbinsx = 16, opacity = 1, marker = list(color='#007ACE')) %>%
+  layout(
+    xaxis = list(
+      title = 'Difference in primary school enrollment rate'
+    ),
+    yaxis = list(
+      title = 'Frequency'
+    ),
+    font = default_font
+  )
+p
+```
+
 
 ```{r}
 car::qqPlot(omit_mod)
@@ -256,61 +294,7 @@ test_df %>%
 ```
 
 ```{r}
-bptest(omit_mod)
-```
-
-Need to impute values or figure out what to do with missing ones.
-```{r}
-cormat_heatmap <- function(data){
-  # generate correlation matrix
-  cormat <- round(cor(data), 2)
-  
-  # melt into a tidy table
-  get_upper_tri <- function(cormat){
-    cormat[lower.tri(cormat)]<- NA
-    return(cormat)
-  }
-  
-  upper_tri <- get_upper_tri(cormat)
-  
-  # reorder matrix based on coefficient value
-  reorder_cormat <- function(cormat){
-    # Use correlation between variables as distance
-    dd <- as.dist((1-cormat)/2)
-    hc <- hclust(dd)
-    cormat <-cormat[hc$order, hc$order]
-  }
-  
-  cormat <- reorder_cormat(cormat)
-  upper_tri <- get_upper_tri(cormat)
-  
-  # Melt the correlation matrix
-  melted_cormat <- reshape2::melt(upper_tri, na.rm = TRUE)
-  
-  # Create a ggheatmap
-  ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
-    geom_tile(color = "white")+
-    scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                         midpoint = 0, limit = c(-1,1), space = "Lab", 
-                         name="Pearson\nCorrelation") +
-    theme_minimal()+ # minimal theme
-    theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                     size = 12, hjust = 1))+
-    coord_fixed()
-  
-  # add correlation values to graph
-  ggheatmap + 
-    geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.border = element_blank(),
-      panel.background = element_blank(),
-      axis.ticks = element_blank(),
-      legend.position = "bottom")
-}
-cormat_heatmap(select_if(omit_df, is.numeric))
+bptest(mgam)
 ```
 
 ```{r}
@@ -319,8 +303,9 @@ ggpairs(select_if(omit_df, is.numeric))
 ```
 
 ```{r}
-df %>%
-  select(value, fertility_diff, labor_diff, literacy_diff, enroll_diff, workingage_diff, perworkergdp_diff, safetynet_diff, employratio_diff, expense_diff) %>%
+df_miss <- df[df['region_orig'] == 'Fmr Soviet Union', ]
+df_miss %>%
+  select(value, fertility_diff, enroll_diff, workingage_diff, perworkergdp_diff, employratio_diff) %>%
   summarize_all(funs(sum(is.na(.)))) %>%
   knitr::kable()
 ```
@@ -334,25 +319,6 @@ omit_df %>%
 ```
 
 ```{r}
-test <- read.csv('welfare_test.csv')
-test %>%
-  summarize_all(funs(sum(is.na(.)))) %>%
-  knitr::kable()
-```
-
-```{r}
-# df <- read.csv("migration_data.csv")
-
-df['fertility_diff'] <- df['fertility_dest'] - df['fertility_orig']
-df['labor_diff'] <- df['laborparticipation_dest'] - df['laborparticipation_orig']
-df['literacy_diff'] <- df['literacy_dest'] - df['literacy_orig']
-df['enroll_diff'] <- df['primaryenroll_dest'] - df['primaryenroll_orig']
-df['workingage_diff'] <- df['workingagepop_dest'] - df['workingagepop_orig']
-df['perworkergdp_diff'] <- df['perworkergdp_dest'] - df['perworkergdp_orig']
-# df['safetynet_diff'] <- df['safety_net_dest'] - df['safety_net_orig']
-df['employratio_diff'] <- df['employratio_dest'] - df['employratio_orig']
-df['socialcont_diff'] <- df['social_cont_dest'] - df['social_cont_orig']
-
 df %>%
   select(value, fertility_diff, labor_diff, literacy_diff, enroll_diff, workingage_diff, perworkergdp_diff, employratio_diff, socialcont_diff) %>%
   summarize_all(funs(sum(is.na(.)))) %>%
@@ -366,60 +332,6 @@ df <- df[ , !(names(df) %in% drops)]
 
 ```{r}
 df <- na.omit(df)
-```
-
-```{r}
-cormat_heatmap <- function(data){
-  # generate correlation matrix
-  cormat <- round(cor(data), 2)
-  
-  # melt into a tidy table
-  get_upper_tri <- function(cormat){
-    cormat[lower.tri(cormat)]<- NA
-    return(cormat)
-  }
-  
-  upper_tri <- get_upper_tri(cormat)
-  
-  # reorder matrix based on coefficient value
-  reorder_cormat <- function(cormat){
-    # Use correlation between variables as distance
-    dd <- as.dist((1-cormat)/2)
-    hc <- hclust(dd)
-    cormat <-cormat[hc$order, hc$order]
-  }
-  
-  cormat <- reorder_cormat(cormat)
-  upper_tri <- get_upper_tri(cormat)
-  
-  # Melt the correlation matrix
-  melted_cormat <- reshape2::melt(upper_tri, na.rm = TRUE)
-  
-  # Create a ggheatmap
-  ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
-    geom_tile(color = "white")+
-    scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                         midpoint = 0, limit = c(-1,1), space = "Lab", 
-                         name="Pearson\nCorrelation") +
-    theme_minimal()+ # minimal theme
-    theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                     size = 12, hjust = 1))+
-    coord_fixed()
-  
-  # add correlation values to graph
-  ggheatmap + 
-    geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.border = element_blank(),
-      panel.background = element_blank(),
-      axis.ticks = element_blank(),
-      legend.position = "bottom")
-}
-
-cormat_heatmap(select_if(df, is.numeric))
 ```
 
 ```{r}
@@ -438,12 +350,12 @@ vif(factor_mod)
 
 ```{r}
 library(broom)
-names <- c("Difference in fertility", "Difference in working \nage proportion", "Difference in \nproportion employed", "Difference in primary \nschool enrollment")
+names <- c("Difference in \nfertility rate", "Difference in working \nage proportion", "Difference in labor \nparticipation rate", "Difference in primary \nschool enrollment")
 p_est <- c(5.53, 29.22, 58.83, 12.23)
 error <- c(219.81, 51.82, 11.45, 10.08)
 coord_df <- data.frame(names, p_est, error)
 ggplot(coord_df, aes(y=names,x=p_est, xmin=-10)) %>%
-  + geom_point(color = c("#00848E"), size=4) %>%
+  + geom_point(color = c("#F49342"), size=4) %>%
   + geom_errorbarh(aes(xmin=p_est-error, xmax=p_est+error), height = .1) %>%
   + labs(x = "Parameter Estimate",
          y = NULL)
@@ -460,7 +372,16 @@ fig1 <- df[(df$perworkergdp_orig >= 62353 & df$perworkergdp_orig < 205327)  & (d
 sum(fig1$value,na.rm=TRUE)
 ```
 
+```{r}
+drops_again <- c("literacy_diff","laborparticipation_orig","laborparticipation_dest","literacy_orig","literacy_dest","safety_net_orig","safety_net_dest","social_cont_orig","social_cont_dest", "safetynet_diff", "labor_diff")
+sum_df <- df[ , !(names(df) %in% drops_again)]
+  
 
+summ_df <- na.omit(sum_df)
+```
 
+```{r}
+summary(omit_df$workingage_diff)
+```
 
 

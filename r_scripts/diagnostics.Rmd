@@ -28,7 +28,7 @@ set.seed(1234)
 ```
 
 ```{r}
-df <- read.csv("extra_migration_data.csv")
+df <- read.csv("migration_data.csv")
 ```
 
 ```{r}

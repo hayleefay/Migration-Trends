@@ -26,7 +26,7 @@ set.seed(1234)
 ```
 
 ```{r}
-df <- read.csv("extra_migration_data.csv")
+df <- read.csv("migration_data.csv")
 ```
 
 ```{r}
@@ -49,7 +49,7 @@ df %>%
 
 
 ```{r}
-factors <- c('fertility_diff','cont_diff','employratio_diff','perworkergdp_diff','labor_diff','literacy_diff','enroll_diff','workingage_diff', 'safetynet_diff', 'value', 'col', 'distwces')
+factors <- c('fertility_diff','employratio_diff','perworkergdp_diff','enroll_diff','workingage_diff', 'value', 'col', 'distwces')
 ```
 
 
